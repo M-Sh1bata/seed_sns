@@ -75,7 +75,7 @@
                 </tr>
                 <tr>
                   <td><div class="text-center">パスワード</div></td>
-                  <td><div class="text-center"><?php echo $password; ?></div></td>
+                  <td><div class="text-center">●●●●●●●●●●</div></td>
                 </tr>
                 <tr>
                   <td><div class="text-center">プロフィール画像</div></td>

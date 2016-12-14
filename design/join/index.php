@@ -1,3 +1,37 @@
+<?php 
+  // check.php から　index.phpにPOST送信するように変更
+  // POST送信されたら、入力チェックをおこないましょう
+  // 入力されていない場合、「入力してください」というエラーメッセージを入力後の下に表示しましょう。
+    echo '<br>';
+    echo '<br>';
+    echo '<br>';
+
+
+  if (!empty($_POST)) {
+          if ($_POST['nick_name']=='') {
+            $errorms['name']="ニックネームを入力してください";
+            echo $errorms['name'].'<br>';
+
+          } if ($_POST['email']=='') {
+            $errorms['email']="メールアドレスを入力してください";
+            echo $errorms['email'].'<br>';
+
+          } if ($_POST['password']=='') {
+            $errorms['password']="パスワードを入力してください";
+            echo $errorms['password'].'<br>';
+          }else {
+            $correctms="OKです";
+          }
+
+  } 
+  // elseif (empty($_POST)) {
+  //   $errorms['total'] = "すべて入力してください。";
+  //   echo $errorms['total'].'<br>';
+  // }
+
+
+ ?> 
+
 <!DOCTYPE html>
 <html lang="ja">
   <head>
@@ -52,7 +86,7 @@
     <div class="row">
       <div class="col-md-6 col-md-offset-3 content-margin-top">
         <legend>会員登録</legend>
-        <form method="post" action="check.php" class="form-horizontal" role="form">
+        <form method="post" action="index.php" class="form-horizontal" role="form">
           <!-- ニックネーム -->
           <div class="form-group">
             <label class="col-sm-4 control-label">ニックネーム</label>
