@@ -1,8 +1,9 @@
 <?php 
-  $nick_name=htmlspecialchars($_POST['nick_name']);
-  $email=htmlspecialchars($_POST['email']);
-  $password=htmlspecialchars($_POST['password']);
-  $picture_path=htmlspecialchars($_POST['picture_path']);
+  session_start();
+  $nick_name=htmlspecialchars($_SESSION['join']['nick_name']);
+  $email=htmlspecialchars($_SESSION['join']['email']);
+  $password=htmlspecialchars($_SESSION['join']['password']);
+  // $picture_path=htmlspecialchars($_SESSION['picture_path']);
   
  ?>
 
@@ -44,7 +45,7 @@
                   <span class="icon-bar"></span>
                   <span class="icon-bar"></span>
               </button>
-              <a class="navbar-brand" href="index.html"><span class="strong-title"><i class="fa fa-twitter-square"></i> Seed SNS</span></a>
+              <a class="navbar-brand" href="index.php"><span class="strong-title"><i class="fa fa-twitter-square"></i> Seed SNS</span></a>
           </div>
           <!-- Collect the nav links, forms, and other content for toggling -->
           <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
