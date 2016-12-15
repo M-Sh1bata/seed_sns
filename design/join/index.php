@@ -45,6 +45,7 @@
             exit();
           }
 
+
   } 
   // elseif (empty($_POST)) {
   //   $errorms['total'] = "すべて入力してください。";
@@ -117,12 +118,10 @@
               <input type="text" name="nick_name" class="form-control" placeholder="例： Seed kun" value="<?php echo $_POST['nick_name']; ?>">
               <?php } else{ ?>
               <input type="text" name="nick_name" class="form-control" placeholder="例： Seed kun">
-                      <?php if($error['nick_name'] == 'blank'): ?>
-                      <p>ニックネームを入力してください</p>
-                      <?php endif; ?> 
               <?php } ?>
-
-
+                      <?php if(isset($error['nick_name'])&&$error['nick_name'] == 'blank'): ?>
+                      <p class="error">*ニックネームを入力してください</p>
+                      <?php endif; ?> 
 
             </div>
           </div>
@@ -134,10 +133,10 @@
               <input type="email" name="email" class="form-control" placeholder="例： seed@nex.com" value="<?php echo $_POST['email'] ?>">
               <?php }else{ ?>
               <input type="email" name="email" class="form-control" placeholder="例： seed@nex.com">
-                      <?php if($error['email'] == 'blank'): ?>
-                      <p>メールアドレスを入力してください</p>
-                      <?php endif; ?> 
               <?php } ?>
+                      <?php if(isset($error['email'])&&$error['email'] == 'blank'): ?>
+                      <p class="error">*メールアドレスを入力してください</p>
+                      <?php endif; ?> 
 
             </div>
           </div>
@@ -149,10 +148,12 @@
               <input type="password" name="password" class="form-control" placeholder="" value="<?php echo $_POST['password']; ?>">
             <?php }else{ ?>
               <input type="password" name="password" class="form-control" placeholder="">
-                      <?php if($error['password'] == 'blank'): ?>
-                      <p>パスワードを入力してください</p>
-                      <?php endif; ?> 
             <?php } ?>
+                      <?php if(isset($error['password'])&&$error['password'] == 'blank'): ?>
+                      <p class="error">*パスワードを入力してください</p>
+                      <?php elseif (isset($error['password'])&&$error['password'] == 'length'): ?>
+                      <p class="error">*パスワードは4文字以上入れてください</p>
+                      <?php endif; ?> 
             </div>
           </div>
           <!-- プロフィール写真 -->
