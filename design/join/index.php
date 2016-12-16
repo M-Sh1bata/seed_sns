@@ -8,7 +8,6 @@
     // echo '<br>';
     // echo '<br>';
 
-
     // $errorms['name']='';
     // $errorms['email']='';
     // $errorms['password']='';
@@ -38,19 +37,45 @@
             //パスワードが４文字より少ない  
             $error['password']='length';
           }
-          // エラーがない場合
-          if (empty($error)) {
-            $_SESSION['join'] = $_POST;
-            header('Location:check.php');
-            exit();
-          }
 
+    //$fileName = $_FILES['picture_path']['name'];
+    //echo $fileName;
+    // var_dump($fileName);
+    if (!empty($_FILES['picture_path']['name'])) {
+      $fileName = $_FILES['picture_path']['name'];
+      //echo $_FILES['picture_path']['tmp_name'];
+      $ext = substr($fileName, -3);
+      // echo $ext;
+      if ($ext != 'jpg' && $ext != 'gif' && $ext != 'png') {
+        $error['image']='type';
+
+      }
+    }
+
+    // エラーがない場合
+    if (empty($error)) {
+      // 画像をアップロードする
+      $image = date('YmdHis').$_FILES['picture_path']['name'];
+      move_uploaded_file($_FILES['picture_path']['tmp_name'], '/Applications/XAMPP/xamppfiles/htdocs/seed_sns/design/member_picture/'.$image);
+      // 一時ファイルのフォルダ /Applications/XAMPP/xamppfiles/temp/phpRAzU7K
+      // echo $image;
+      // POSTの中身をSESSIONに保存
+      $_SESSION['join'] = $_POST;
+      // $image（日付名前.拡張子）をSESSIONに保存する
+      $_SESSION['join']['image'] = $image;
+      // check.phpに移動する
+      header('Location: check.php');
+
+      exit();
+     }
 
   } 
   // elseif (empty($_POST)) {
   //   $errorms['total'] = "すべて入力してください。";
   //   echo $errorms['total'].'<br>';
   // }
+
+    //写真アップロードについて
 
 
  ?> 
@@ -109,7 +134,7 @@
     <div class="row">
       <div class="col-md-6 col-md-offset-3 content-margin-top">
         <legend>会員登録</legend>
-        <form method="post" action="" class="form-horizontal" role="form">
+        <form method="post" action="" class="form-horizontal" role="form" enctype="multipart/form-data">
           <!-- ニックネーム -->
           <div class="form-group">
             <label class="col-sm-4 control-label">ニックネーム</label>
@@ -161,6 +186,9 @@
             <label class="col-sm-4 control-label">プロフィール写真</label>
             <div class="col-sm-8">
               <input type="file" name="picture_path" class="form-control">
+              <?php if (!empty($error['image'])&&$error['image'] == 'type'): ?>
+              <p class="error">*写真などは「.gif」、「.jpg」または、「.jpn」の画像を指定してください</p>
+              <?php endif; ?>
             </div>
           </div>
 
