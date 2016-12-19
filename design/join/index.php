@@ -3,6 +3,7 @@
   // POST送信されたら、入力チェックをおこないましょう
   // 入力されていない場合、「入力してください」というエラーメッセージを入力後の下に表示しましょう。
   session_start();
+  require('../dbconnect.php');
 
     // echo '<br>';
     // echo '<br>';
@@ -11,8 +12,10 @@
     // $errorms['name']='';
     // $errorms['email']='';
     // $errorms['password']='';
+    // $filePath='/Applications/XAMPP/xamppfiles/htdocs/seed_sns/design/member_picture/';
+    $filePath='/var/www/html/seed_sns/design/member_picture/';
 
-       $error=array();
+    $error=array();
 
   if (!empty($_POST)) {
           // nicknameが未入力の場合
@@ -52,17 +55,30 @@
       }
     }
 
+    // 重複アカウントのチェック
+    if (empty($error)) {
+      // $sql = sprintf('SELECT COUNT(*) AS cnt FROM members WHERE email = "%s"',
+      $sql = sprintf('SELECT COUNT(*) AS cnt FROM `members` WHERE `email`="%s"',
+        mysqli_real_escape_string($db, $_POST['email'])
+        );
+      $record = mysqli_query($db,$sql) or die(mysqli_error($db));
+      $table=mysqli_fetch_assoc($record);
+      if ($table['cnt']>0) {
+        $error['email'] = 'duplicate';
+      }
+    }
+
     // エラーがない場合
     if (empty($error)) {
       // 画像をアップロードする
       $image = date('YmdHis').$_FILES['picture_path']['name'];
-      move_uploaded_file($_FILES['picture_path']['tmp_name'], '/Applications/XAMPP/xamppfiles/htdocs/seed_sns/design/member_picture/'.$image);
+      move_uploaded_file($_FILES['picture_path']['tmp_name'], $filePath.$image);
       // 一時ファイルのフォルダ /Applications/XAMPP/xamppfiles/temp/phpRAzU7K
       // echo $image;
       // POSTの中身をSESSIONに保存
       $_SESSION['join'] = $_POST;
       // $image（日付名前.拡張子）をSESSIONに保存する
-      $_SESSION['join']['image'] = $image;
+      $_SESSION['join']['picture_path'] = $image;
       // check.phpに移動する
       header('Location: check.php');
 
@@ -70,12 +86,11 @@
      }
 
   } 
-  // elseif (empty($_POST)) {
-  //   $errorms['total'] = "すべて入力してください。";
-  //   echo $errorms['total'].'<br>';
-  // }
-
-    //写真アップロードについて
+    // 書き直し
+    if (isset($_REQUEST['action'])&&$_REQUEST['action']=='rewrite') {
+      $_POST=$_SESSION['join'];
+      $error['rewrite'] = true;
+    }
 
 
  ?> 
@@ -144,9 +159,10 @@
               <?php } else{ ?>
               <input type="text" name="nick_name" class="form-control" placeholder="例： Seed kun">
               <?php } ?>
-                      <?php if(isset($error['nick_name'])&&$error['nick_name'] == 'blank'): ?>
-                      <p class="error">*ニックネームを入力してください</p>
-                      <?php endif; ?> 
+              <?php if(isset($error['nick_name'])&&$error['nick_name'] == 'blank'): ?>
+              <p class="error">*ニックネームを入力してください</p>
+              <?php endif; ?> 
+
 
             </div>
           </div>
@@ -162,6 +178,9 @@
                       <?php if(isset($error['email'])&&$error['email'] == 'blank'): ?>
                       <p class="error">*メールアドレスを入力してください</p>
                       <?php endif; ?> 
+                      <?php if (isset($error['email'])&&$error['email']=='duplicate'):?>
+                        <p class="error">*指定されたメールアドレスはすでに登録されています</p>
+                      <?php endif; ?>
 
             </div>
           </div>
@@ -189,6 +208,9 @@
               <?php if (!empty($error['image'])&&$error['image'] == 'type'): ?>
               <p class="error">*写真などは「.gif」、「.jpg」または、「.jpn」の画像を指定してください</p>
               <?php endif; ?>
+                      <?php if (!empty($error)): ?>
+                      <p class="error">*恐れ入りますが、画像を改めて指定してください</p>
+                      <?php endif ?>
             </div>
           </div>
 

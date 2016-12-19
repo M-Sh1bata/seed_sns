@@ -1,10 +1,45 @@
 <?php 
   session_start();
+  require('../dbconnect.php');
   $nick_name=htmlspecialchars($_SESSION['join']['nick_name'], ENT_QUOTES, 'utf-8');
   $email=htmlspecialchars($_SESSION['join']['email'], ENT_QUOTES, 'utf-8');
   $password=htmlspecialchars($_SESSION['join']['password'], ENT_QUOTES, 'utf-8');
-  $image=htmlspecialchars($_SESSION['join']['image'], ENT_QUOTES, 'utf-8');
+  $image=htmlspecialchars($_SESSION['join']['picture_path'], ENT_QUOTES, 'utf-8');
   // $picture_path=htmlspecialchars($_SESSION['picture_path']);
+
+  $picturePath='http://192.168.33.10/seed_sns/design/member_picture/';
+  // 直接URLをクリックした際にindex.phpに処理を返す
+  if (!isset($_SESSION['join'])) {
+    header('Location: index.php');
+    exit();
+  }
+
+  if (!empty($_POST)) {
+    // 登録処理をする
+
+    // 教科書の通りのSQL文
+    // sprintf('')
+    $sql = sprintf('INSERT INTO `members` SET `nick_name`="%s", `email`="%s", `password`="%s", `picture_path`="%s", `created`=now()',
+    // $sql = sprintf('INSET INTO `members` SET `nick_name`="%s", `email`="%s", `password`="%s", `picture_path`="%s", `created`=now(),
+    // SQL文を少し修正
+      // $sql = sprintf('INSET INTO `members` (`nick_name`, `email`, `password`, `picture_path`, `created`) VALUES ("%s","%s","%s","%s","%s")',
+      ////うまく動作しなかったため、テスト用に作成
+    // $sql = sprintf('INSERT INTO `members`(`nick_name`, `email`, `password`, `picture_path`, `created`) VALUES ("test","aaa@gmail.com","testtest","testtest","2016-10-12 11:10:11")'
+
+      mysqli_real_escape_string($db, $_SESSION['join']['nick_name']),
+      mysqli_real_escape_string($db, $_SESSION['join']['email']),
+      mysqli_real_escape_string($db, sha1($_SESSION['join']['password'])),
+      mysqli_real_escape_string($db, $_SESSION['join']['picture_path'])
+      );
+    // デバッグ用
+    // var_dump($sql);
+
+    mysqli_query($db,$sql) or die(mysqli_error($db));
+    unset($_SESSION['join']);
+
+    header('Location:thanks.php');
+    exit();
+  }
 
   // echo '<br>';
   // echo '<br>';
@@ -65,7 +100,7 @@
   <div class="container">
     <div class="row">
       <div class="col-md-4 col-md-offset-4 content-margin-top">
-        <form method="post" action="thanks.php" class="form-horizontal" role="form">
+        <form method="post" action="" class="form-horizontal" role="form">
           <input type="hidden" name="action" value="submit">
           <div class="well">ご登録内容をご確認ください。</div>
             <table class="table table-striped table-condensed">
@@ -85,12 +120,12 @@
                 </tr>
                 <tr>
                   <td><div class="text-center">プロフィール画像</div></td>
-                  <td><div class="text-center"><img src="http://localhost/seed_sns/design/member_picture/<?php echo $image ?>" width="100" height="100"></div></td>
+                  <td><div class="text-center"><img src="<?php echo $picturePath.$image; ?>" width="100" height="100"></div></td>
                 </tr>
               </tbody>
             </table>
 
-            <a href="index.php">&laquo;&nbsp;書き直す</a> | 
+            <a href="index.php?action=rewrite">&laquo;&nbsp;書き直す</a> | 
             <input type="submit" class="btn btn-default" value="会員登録">
           </div>
         </form>

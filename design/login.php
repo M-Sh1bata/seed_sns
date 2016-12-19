@@ -1,3 +1,34 @@
+<?php 
+    require('dbconnect.php');
+    session_start();
+
+    if (!empty($_POST)) {
+      // $email = htmlspecialchars($_POST['email']);
+      // ログインの処理
+      if (isset($_POST['email']) && $_POST['password'] != '') {
+        $sql=sprintf('SELECT * FROM members WHERE email = "%s" AND password = "%s"',
+          mysqli_real_escape_string($db, $_POST['email']),
+          mysqli_real_escape_string($db, sha1($_POST['password']))
+          );
+        $record = mysqli_query($db, $sql) or die (mysqli_error($db));
+        if ($table = mysqli_fetch_assoc($record)) {
+          // ログイン成功
+          $_SESSION['id']=$table['id'];
+          $_SESSION['time']=time();
+          header('Location: index.php');
+          exit();
+        }else{
+          $error['login']='failed';
+        }
+
+      }else{
+        $error['login'] = 'blank';
+      }
+    }
+
+ ?>
+
+
 <!DOCTYPE html>
 <html lang="ja">
   <head>
@@ -54,7 +85,17 @@
           <div class="form-group">
             <label class="col-sm-4 control-label">メールアドレス</label>
             <div class="col-sm-8">
-              <input type="email" name="email" class="form-control" placeholder="例： seed@nex.com">
+              <?php if (isset($_POST['email'])): ?>
+              <input type="email" name="email" class="form-control" placeholder="例： seed@nex.com" value="<?php echo htmlspecialchars($_POST['email']); ?>">
+            <?php elseif (empty($_POST['email'])): ?>
+              <input type="email" name="email" class="form-control" placeholder="例： seed@nex.com" >
+              <?php endif ?>
+              <?php if (isset($error['login'])&&$error['login']=='blank'): ?>
+                <p class="error">*メールアドレスとパスワードをご記入ください</p>
+              <?php endif ?>
+              <?php if (isset($error['login'])&&$error['login'] == 'failed'): ?>
+                <p class="error">*ログインに失敗しました。正しくご記入ください。</p>
+              <?php endif ?>
             </div>
           </div>
           <!-- パスワード -->
