@@ -2,6 +2,14 @@
     require('dbconnect.php');
     session_start();
 
+    // 自動ログインの実装
+    // cookieにemail情報があった場合は、POST情報に値をセットする
+    if (isset($_COOKIE['email'])) {
+      $_POST['email'] = $_COOKIE['email'];
+      $_POST['password'] = $_COOKIE['password'];
+      $_POST['save'] = 'on';
+    }
+
     if (!empty($_POST)) {
       // $email = htmlspecialchars($_POST['email']);
       // ログインの処理
@@ -13,8 +21,21 @@
         $record = mysqli_query($db, $sql) or die (mysqli_error($db));
         if ($table = mysqli_fetch_assoc($record)) {
           // ログイン成功
-          $_SESSION['id']=$table['id'];
+          // データが取れるとき、$tableに中身が入り、TRUEとなる
+          // 入っていないときはFALSE(elseの処理)
+          $_SESSION['id']=$table['member_id'];
           $_SESSION['time']=time();
+          // $_SESSION['nick_name']=$table['nick_name'];
+          ///デバッグ用
+          echo $_SESSION['nick_name'];
+
+          // ログイン情報を記録する
+          // 自動ログインのチェックボックスにチェックが入っていたらCOOKIEに入力情報を保存
+          if ($_POST['save']=='on') {
+            setcookie('email', $_POST['email'],time()+60*60*24*14);
+            setcookie('password',$_POST['password'],time()+60*60*24*14);
+          }
+
           header('Location: index.php');
           exit();
         }else{
@@ -90,9 +111,10 @@
             <?php elseif (empty($_POST['email'])): ?>
               <input type="email" name="email" class="form-control" placeholder="例： seed@nex.com" >
               <?php endif ?>
-              <?php if (isset($error['login'])&&$error['login']=='blank'): ?>
-                <p class="error">*メールアドレスとパスワードをご記入ください</p>
-              <?php endif ?>
+            <!-- 必須エラー -->
+           <?php if (isset($error['login'])&&$error['login']=='blank'): ?>
+           <p class="error">*メールアドレスとパスワードをご記入ください</p>
+           <?php endif ?>
               <?php if (isset($error['login'])&&$error['login'] == 'failed'): ?>
                 <p class="error">*ログインに失敗しました。正しくご記入ください。</p>
               <?php endif ?>
@@ -105,8 +127,19 @@
               <input type="password" name="password" class="form-control" placeholder="">
             </div>
           </div>
+          <!-- 自動ログイン -->
+           <div class="form-group">
+            <label class="col-sm-4 control-label">自動ログイン</label>
+            <div class="col-sm-8">
+              <input type="checkbox" name="save" class="form-control" value="on">
+            </div>
+          </div>
           <input type="submit" class="btn btn-default" value="ログイン">
+          | <a href="join/" class="btn btn-default">会員登録</a>
         </form>
+<!--         <form　method="post"  class="form-horizontal" role="form">
+          <input type="submit" action="./join/index.php" class="btn btn-default" value="会員登録">
+        </form> -->
       </div>
     </div>
   </div>

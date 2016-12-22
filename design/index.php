@@ -1,3 +1,63 @@
+<?php 
+    session_start();
+    require('dbconnect.php');
+
+    // $nick_name =htmlspecialchars($_SESSION['nick_name']);
+    if (isset($_SESSION['id']) && $_SESSION['time']+3600>time()) {
+      // ログインしている
+      $_SESSION['time'] = time();
+
+      $sql = sprintf('SELECT * FROM members WHERE member_id = %d',
+        mysqli_real_escape_string($db, $_SESSION['id'])
+        );
+      $record = mysqli_query($db, $sql) or die(my_sqli_error($db));
+      $member = mysqli_fetch_assoc($record);
+
+      $nick_name= htmlspecialchars($member['nick_name']);
+      }else{
+        // ログインしていない
+        header('Location: login.php');
+        exit();
+      }
+
+      if (!empty($_POST)) {
+        if ($_POST['tweet'] != '') {
+          $sql = sprintf('INSERT INTO tweets SET member_id = %d, tweet="%s", reply_tweet_id ="0", created = NOW()',
+              mysqli_real_escape_string($db, $member['member_id']),
+              mysqli_real_escape_string($db,$_POST['tweet'])
+            );
+          var_dump($sql);
+          mysqli_query($db, $sql) or die(mysqli_error($db));
+          header('Location:index.php');
+          exit();
+        }
+      }
+
+      // 投稿を取得する
+      $sql = sprintf ('SELECT m.nick_name, m.picture_path, p.* FROM members m, tweets p WHERE m.member_id=p.member_id ORDER BY p.created DESC');
+      $posts = mysqli_query($db,$sql) or die (mysqli_error($db));
+      // デバッグ
+      // var_dump($sql);
+      // echo htmlspecialchars($posts['nick_name'], ENT_QUOTES, 'UTF-8');
+      // $nick_name = htmlspecialchars($posts['nick_name'], ENT_QUOTES, 'UTF-8');
+      // $tweet = htmlspecialchars($posts['tweet'], ENT_QUOTES, 'UTF-8');
+      // $picture_path = htmlspecialchars($posts['picture_path'], ENT_QUOTES, 'UTF-8');
+
+
+      // 返信の場合
+      if (isset($_REQUEST['res'])) {
+        $sql=sprintf('SELECT m.nick_name, m.picture_path, p.* FROM members m, tweets p WHERE m.member_id=p.member_id AND p.member_id =%d ORDER BY p.created DESC',
+          mysqli_real_escape_string($db, $REQUEST['res'])
+         );
+        $record = mysqli_query($db, $sql) or die(mysqli_error($db));
+        $table = mysqli_fetch_assoc($record);
+        $message = '@' . $table['nick_name'] . ' ' . $table['tweet'];
+
+        $tweet=htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
+        $member_id = htmlspecialchars($_REQUEST['res'], ENT_QUOTES, 'UTF-8');
+      }
+ ?>
+
 <!DOCTYPE html>
 <html lang="ja">
   <head>
@@ -33,12 +93,12 @@
                   <span class="icon-bar"></span>
                   <span class="icon-bar"></span>
               </button>
-              <a class="navbar-brand" href="index.html"><span class="strong-title"><i class="fa fa-twitter-square"></i> Seed SNS</span></a>
+              <a class="navbar-brand" href="index.php"><span class="strong-title"><i class="fa fa-twitter-square"></i> Seed SNS</span></a>
           </div>
           <!-- Collect the nav links, forms, and other content for toggling -->
           <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
               <ul class="nav navbar-nav navbar-right">
-                <li><a href="logout.html">ログアウト</a></li>
+                <li><a href="logout.php">ログアウト</a></li>
               </ul>
           </div>
           <!-- /.navbar-collapse -->
@@ -49,7 +109,7 @@
   <div class="container">
     <div class="row">
       <div class="col-md-4 content-margin-top">
-        <legend>ようこそ●●さん！</legend>
+        <legend>ようこそ<?php echo $nick_name; ?>さん！</legend>
         <form method="post" action="" class="form-horizontal" role="form">
             <!-- つぶやき -->
             <div class="form-group">
@@ -61,29 +121,31 @@
           <ul class="paging">
             <input type="submit" class="btn btn-info" value="つぶやく">
                 &nbsp;&nbsp;&nbsp;&nbsp;
-                <li><a href="index.html" class="btn btn-default">前</a></li>
+                <li><a href="index.php" class="btn btn-default">前</a></li>
                 &nbsp;&nbsp;|&nbsp;&nbsp;
-                <li><a href="index.html" class="btn btn-default">次</a></li>
+                <li><a href="index.php" class="btn btn-default">次</a></li>
           </ul>
         </form>
       </div>
 
       <div class="col-md-8 content-margin-top">
+      <?php while ($post = mysqli_fetch_assoc($posts)):  ?>
         <div class="msg">
-          <img src="http://c85c7a.medialib.glogster.com/taniaarca/media/71/71c8671f98761a43f6f50a282e20f0b82bdb1f8c/blog-images-1349202732-fondo-steve-jobs-ipad.jpg" width="48" height="48">
+          <img src='./member_picture/<?php echo htmlspecialchars($post['picture_path'], ENT_QUOTES, 'UTF-8'); ?>' width="48" height="48" alt="<?php echo htmlspecialchars($post['nick_name'], ENT_QUOTES, 'UTF-8'); ?>">
           <p>
-            つぶやき４<span class="name"> (Seed kun) </span>
-            [<a href="#">Re</a>]
+            <?php echo htmlspecialchars($post['tweet'], ENT_QUOTES, 'UTF-8'); ?><span class="name"> (<?php echo htmlspecialchars($post['nick_name'], ENT_QUOTES, 'UTF-8'); ?>) </span>
+            [<a href="index.php?res=<?php echo htmlspecialchars($post['member_id'],ENT_QUOTES, 'UTF-8'); ?>">Re</a>]
           </p>
           <p class="day">
-            <a href="view.html">
+            <a href="view.php">
               2016-01-28 18:04
             </a>
             [<a href="#" style="color: #00994C;">編集</a>]
             [<a href="#" style="color: #F33;">削除</a>]
           </p>
         </div>
-        <div class="msg">
+      <?php endwhile; ?>
+        <!-- <div class="msg">
           <img src="http://c85c7a.medialib.glogster.com/taniaarca/media/71/71c8671f98761a43f6f50a282e20f0b82bdb1f8c/blog-images-1349202732-fondo-steve-jobs-ipad.jpg" width="48" height="48">
           <p>
             つぶやき３<span class="name"> (Seed kun) </span>
@@ -127,7 +189,7 @@
         </div>
       </div>
 
-    </div>
+    </div> -->
   </div>
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
