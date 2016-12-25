@@ -2,6 +2,15 @@
     session_start();
     require('dbconnect.php');
 
+    // htmlspecialcharsのショートカット
+    function h($value){
+      return htmlspecialchars($value,ENT_QUOTES, 'UTF-8');
+    }
+    // 本文何のURLにリンクを設定します
+    // function makeLink($value){
+    //   return mb_ereg_replace("(https?)(://[:alnum:]¥+¥$S¥;¥?¥.%,!#~*/:@&=_-]+)", '<a href="¥1¥2">¥1¥2</a>', $value);
+    // }
+
     // $nick_name =htmlspecialchars($_SESSION['nick_name']);
     if (isset($_SESSION['id']) && $_SESSION['time']+3600>time()) {
       // ログインしている
@@ -14,10 +23,24 @@
       $member = mysqli_fetch_assoc($record);
 
       $nick_name= htmlspecialchars($member['nick_name']);
+
       }else{
         // ログインしていない
         header('Location: login.php');
         exit();
+      }
+
+      if (isset($_GET['res'])&&!empty($_POST)) {
+        $sql = sprintf('INSERT INTO tweets SET member_id = %d, tweet="%s", reply_tweet_id ="%d", created = NOW()',
+              mysqli_real_escape_string($db, $member['member_id']),
+              mysqli_real_escape_string($db,$_POST['tweet']),
+              mysqli_real_escape_string($db,$_GET['res'])
+            );
+          // デバッグ用
+          var_dump($sql);
+          mysqli_query($db, $sql) or die(mysqli_error($db));
+          header('Location:index.php');
+          exit();
       }
 
       if (!empty($_POST)) {
@@ -26,7 +49,8 @@
               mysqli_real_escape_string($db, $member['member_id']),
               mysqli_real_escape_string($db,$_POST['tweet'])
             );
-          var_dump($sql);
+          //デバッグ
+          // var_dump($sql);
           mysqli_query($db, $sql) or die(mysqli_error($db));
           header('Location:index.php');
           exit();
@@ -34,9 +58,9 @@
       }
 
       // 投稿を取得する
-      $sql = sprintf ('SELECT m.nick_name, m.picture_path, p.* FROM members m, tweets p WHERE m.member_id=p.member_id ORDER BY p.created DESC');
+      $sql = sprintf ('SELECT m.nick_name, m.picture_path, p.* FROM members m, tweets p WHERE m.member_id=p.member_id AND delete_frag=0 ORDER BY p.created DESC');
       $posts = mysqli_query($db,$sql) or die (mysqli_error($db));
-      // デバッグ
+      //// デバッグ
       // var_dump($sql);
       // echo htmlspecialchars($posts['nick_name'], ENT_QUOTES, 'UTF-8');
       // $nick_name = htmlspecialchars($posts['nick_name'], ENT_QUOTES, 'UTF-8');
@@ -45,16 +69,24 @@
 
 
       // 返信の場合
-      if (isset($_REQUEST['res'])) {
-        $sql=sprintf('SELECT m.nick_name, m.picture_path, p.* FROM members m, tweets p WHERE m.member_id=p.member_id AND p.member_id =%d ORDER BY p.created DESC',
-          mysqli_real_escape_string($db, $REQUEST['res'])
+      if (isset($_GET['res'])) {
+        $sql=sprintf('SELECT m.nick_name, m.picture_path, p.* FROM members m, tweets p WHERE m.member_id=p.member_id AND p.tweet_id =%d ORDER BY p.created DESC',
+          mysqli_real_escape_string($db, $_GET['res'])
          );
+        var_dump($sql);
         $record = mysqli_query($db, $sql) or die(mysqli_error($db));
         $table = mysqli_fetch_assoc($record);
         $message = '@' . $table['nick_name'] . ' ' . $table['tweet'];
 
+        // デバッグ用
+        // echo $table['nick_name'].'<br>';
+        // echo $message.'<br>';
+
         $tweet=htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
-        $member_id = htmlspecialchars($_REQUEST['res'], ENT_QUOTES, 'UTF-8');
+        // デバッグ
+        // echo $tweet;
+
+        $tweet_id = htmlspecialchars($_GET['res'], ENT_QUOTES, 'UTF-8');
       }
  ?>
 
@@ -115,11 +147,17 @@
             <div class="form-group">
               <label class="col-sm-4 control-label">つぶやき</label>
               <div class="col-sm-8">
+                <?php if (isset($_GET['res'])): ?>
+                <textarea name="tweet" cols="50" rows="5" class="form-control" placeholder="例：Hello World!"><?php echo $tweet; ?></textarea>
+                <?php else: ?>
                 <textarea name="tweet" cols="50" rows="5" class="form-control" placeholder="例：Hello World!"></textarea>
+                <?php endif ?>
               </div>
             </div>
           <ul class="paging">
             <input type="submit" class="btn btn-info" value="つぶやく">
+            <!-- POSTにhiddenにて登録 -->
+            <input type="hidden" name="reply_tweet_id" value="<?php echo h($_GET['res']); ?>">
                 &nbsp;&nbsp;&nbsp;&nbsp;
                 <li><a href="index.php" class="btn btn-default">前</a></li>
                 &nbsp;&nbsp;|&nbsp;&nbsp;
@@ -134,14 +172,19 @@
           <img src='./member_picture/<?php echo htmlspecialchars($post['picture_path'], ENT_QUOTES, 'UTF-8'); ?>' width="48" height="48" alt="<?php echo htmlspecialchars($post['nick_name'], ENT_QUOTES, 'UTF-8'); ?>">
           <p>
             <?php echo htmlspecialchars($post['tweet'], ENT_QUOTES, 'UTF-8'); ?><span class="name"> (<?php echo htmlspecialchars($post['nick_name'], ENT_QUOTES, 'UTF-8'); ?>) </span>
-            [<a href="index.php?res=<?php echo htmlspecialchars($post['member_id'],ENT_QUOTES, 'UTF-8'); ?>">Re</a>]
+            [<a href="index.php?res=<?php echo htmlspecialchars($post['tweet_id'],ENT_QUOTES, 'UTF-8'); ?>">Re</a>]
           </p>
           <p class="day">
             <a href="view.php">
-              2016-01-28 18:04
+              <?php echo h($post['created']); ?>
             </a>
-            [<a href="#" style="color: #00994C;">編集</a>]
-            [<a href="#" style="color: #F33;">削除</a>]
+
+            <?php if (isset($post['reply_tweet_id'])&&$post['reply_tweet_id']>0): ?>
+              <a href="view.php?tweet_id=<?php echo htmlspecialchars($post['tweet_id'], ENT_QUOTES, 'UTF-8'); ?>">返信元のメッセージ</a>
+            <?php endif ?>
+            
+            [<a href="edit.php?tweet_id=<?php echo h($post['tweet_id']); ?>" style="color: #00994C;">編集</a>]
+            [<a href="delete.php?tweet_id=<?php echo h($post['tweet_id']); ?>" style="color: #F33;">削除</a>]
           </p>
         </div>
       <?php endwhile; ?>

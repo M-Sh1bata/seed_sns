@@ -1,27 +1,37 @@
 <?php 
-  session_start();
-  require('dbconnect.php');
+			// やること
+			// textareaを表示する　nameはtweet
+			// SQLでtweetを取得
+			// SQLで取得したtweetをtextareaに表示
+			// 投稿内容を取得してUPDATEを実行
 
-    function h($value){
-    return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-  }
+	session_start();
+	require('dbconnect.php');
 
-  ////tweet_idがない場合はindex.phpに戻る
-  // if (empty($_REQUEST['tweet_id'])) {
-  //   header('Location:index.php')
-  // }
+		if (isset($_SESSION['id'])) {
+		$tweet_id=$_REQUEST['tweet_id'];
 
-  // 投稿を取得する
-  if (isset($_REQUEST['tweet_id'])) {
- 
- 
-  $sql=sprintf('SELECT m.nick_name, m.picture_path, t.* FROM members m, tweets t WHERE m.member_id= t.member_id AND t.tweet_id= %d ORDER BY t.created DESC',
-      mysqli_real_escape_string($db, $_REQUEST['tweet_id'])
-      );
-  $posts = mysqli_query($db, $sql) or die(mysqli_error($db));
-   var_dump($sql);
+		// 投稿を検査する
+		$sql = sprintf('SELECT * FROM tweets WHERE tweet_id= %d',
+			mysqli_real_escape_string($db, $tweet_id)
+			);
+		// デバッグ
+		var_dump($sql);
 
- }
+		$record = mysqli_query($db,$sql) or die(mysqli_error($db));
+		$table = mysqli_fetch_assoc($record);
+		if ($table['member_id'] == $_SESSION['id']) {
+			$sql = sprintf('UPDATE `tweets` SET `tweet`=%s WHERE `tweet_id`= %d',
+
+			mysqli_real_escape_string($db, $_POST['tweet']),
+			mysqli_real_escape_string($db, $tweet_id)
+			);
+		mysqli_query($db,$sql) or die(mysqli_error($db));
+		}
+	}
+
+	header('Location: index.php');
+
 
  ?>
 
@@ -77,23 +87,17 @@
     <div class="row">
       <div class="col-md-4 col-md-offset-4 content-margin-top">
         <div class="msg">
-          <?php if (isset($posts)&&$post=mysqli_fetch_assoc($posts)): ?>
-          <img src='./member_picture/<?php echo h($post['picture_path']); ?>' width="100" height="100">
-          <p>投稿者 : <span class="name"><?php echo h($post['nick_name']) ?></span></p>
+          <img src="http://c85c7a.medialib.glogster.com/taniaarca/media/71/71c8671f98761a43f6f50a282e20f0b82bdb1f8c/blog-images-1349202732-fondo-steve-jobs-ipad.jpg" width="100" height="100">
+          <p>投稿者 : <span class="name"> Seed kun </span></p>
           <p>
             つぶやき : <br>
-            <?php echo h($post['tweet']); ?>
+            つぶやき４つぶやき４つぶやき４
           </p>
           <p class="day">
-            <?php echo h($post['created']); ?> 
-            [<a href="delete.php?tweet_id=<?php echo h($post['tweet_id']); ?>" style="color: #F33;">削除</a>]
+            2016-01-28 18:04
+            [<a href="#" style="color: #F33;">削除</a>]
           </p>
         </div>
-       <?php else: ?>
-        <p class="error">
-        <?php echo "*その投稿は削除されたか、URLが間違っています" ?>
-        </p>
-       <?php endif ?>
         <a href="index.php">&laquo;&nbsp;一覧へ戻る</a>
       </div>
     </div>
@@ -104,3 +108,6 @@
     <script src="js/bootstrap.min.js"></script>
   </body>
 </html>
+
+
+
