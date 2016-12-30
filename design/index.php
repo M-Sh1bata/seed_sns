@@ -37,7 +37,7 @@
               mysqli_real_escape_string($db,$_GET['res'])
             );
           // デバッグ用
-          var_dump($sql);
+          // var_dump($sql);
           mysqli_query($db, $sql) or die(mysqli_error($db));
           header('Location:index.php');
           exit();
@@ -58,15 +58,45 @@
       }
 
       // 投稿を取得する
-      $sql = sprintf ('SELECT m.nick_name, m.picture_path, p.* FROM members m, tweets p WHERE m.member_id=p.member_id AND delete_frag=0 ORDER BY p.created DESC');
-      $posts = mysqli_query($db,$sql) or die (mysqli_error($db));
-      //// デバッグ
-      // var_dump($sql);
-      // echo htmlspecialchars($posts['nick_name'], ENT_QUOTES, 'UTF-8');
-      // $nick_name = htmlspecialchars($posts['nick_name'], ENT_QUOTES, 'UTF-8');
-      // $tweet = htmlspecialchars($posts['tweet'], ENT_QUOTES, 'UTF-8');
-      // $picture_path = htmlspecialchars($posts['picture_path'], ENT_QUOTES, 'UTF-8');
+      if (isset($_REQUEST['page'])) {
+      $page = $_REQUEST['page'];
+      }
 
+      if (empty($_REQUEST['page'])) {
+       $page = 1;
+      }
+
+      $page = max($page,1);
+
+      // 最終ページを取得する
+      $sql = 'SELECT COUNT(*) AS cnt FROM tweets';
+      $recordSet = mysqli_query($db, $sql);
+      $table = mysqli_fetch_assoc($recordSet);
+      $maxPage = ceil($table['cnt']/5);
+      $page = min($page, $maxPage);
+
+      $start = ($page - 1) * 5;
+      $start = max(0, $start);
+
+      $sql = sprintf('SELECT m.nick_name, m.picture_path, t.* FROM members m, tweets t WHERE m.member_id=t.member_id AND delete_frag=0 ORDER BY t.created DESC LIMIT %d ,5',
+        $start
+        );
+
+      $posts = mysqli_query($db,$sql) or die (mysqli_error($db));
+
+
+
+
+      // // 投稿を取得する（before）
+      // $sql = sprintf ('SELECT m.nick_name, m.picture_path, p.* FROM members m, tweets p WHERE m.member_id=p.member_id AND delete_frag=0 ORDER BY p.created DESC');
+      // $posts = mysqli_query($db,$sql) or die (mysqli_error($db));
+      // //// デバッグ
+      // // var_dump($sql);
+      // // echo htmlspecialchars($posts['nick_name'], ENT_QUOTES, 'UTF-8');
+      // // $nick_name = htmlspecialchars($posts['nick_name'], ENT_QUOTES, 'UTF-8');
+      // // $tweet = htmlspecialchars($posts['tweet'], ENT_QUOTES, 'UTF-8');
+      // // $picture_path = htmlspecialchars($posts['picture_path'], ENT_QUOTES, 'UTF-8');
+      
 
       // 返信の場合
       if (isset($_GET['res'])) {
@@ -88,6 +118,9 @@
 
         $tweet_id = htmlspecialchars($_GET['res'], ENT_QUOTES, 'UTF-8');
       }
+
+
+
  ?>
 
 <!DOCTYPE html>
@@ -159,9 +192,19 @@
             <!-- POSTにhiddenにて登録 -->
             <input type="hidden" name="reply_tweet_id" value="<?php echo h($_GET['res']); ?>">
                 &nbsp;&nbsp;&nbsp;&nbsp;
-                <li><a href="index.php" class="btn btn-default">前</a></li>
-                &nbsp;&nbsp;|&nbsp;&nbsp;
-                <li><a href="index.php" class="btn btn-default">次</a></li>
+                <?php if ($page>1): ?>
+                <li><a href="index.php?page=<?php print($page -1); ?>" class="btn btn-default">前</a></li>
+               &nbsp;&nbsp;|&nbsp;&nbsp;
+
+                <?php else: ?>
+                <li class="btn">前</li>
+               &nbsp;&nbsp;|&nbsp;&nbsp;
+                <?php endif ?>
+                <?php if ($page < $maxPage): ?>
+                <li><a href="index.php?page=<?php print ($page+1); ?>" class="btn btn-default">次</a></li>
+                <?php else: ?>
+                <li class="btn">次</li>
+                <?php endif ?>
           </ul>
         </form>
       </div>
