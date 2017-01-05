@@ -69,7 +69,10 @@
       $page = max($page,1);
 
       // 最終ページを取得する
-      $sql = 'SELECT COUNT(*) AS cnt FROM tweets';
+
+     $sql = 'SELECT COUNT(*) AS cnt FROM tweets';
+        
+
       $recordSet = mysqli_query($db, $sql);
       $table = mysqli_fetch_assoc($recordSet);
       $maxPage = ceil($table['cnt']/5);
@@ -77,10 +80,26 @@
 
       $start = ($page - 1) * 5;
       $start = max(0, $start);
+    
 
-      $sql = sprintf('SELECT m.nick_name, m.picture_path, t.* FROM members m, tweets t WHERE m.member_id=t.member_id AND delete_frag=0 ORDER BY t.created DESC LIMIT %d ,5',
-        $start
-        );
+      //最終ページ取得
+      // $sql = sprintf('SELECT m.nick_name, m.picture_path, t.* FROM members m, tweets t WHERE m.member_id=t.member_id AND delete_frag=0 ORDER BY t.created DESC LIMIT %d ,5',
+      //   $start
+      //   );
+
+            // 検索の場合
+   if (isset($_GET['search_word']) && !empty($_GET['search_word'])) {
+     $sql = sprintf('SELECT m.`nick_name`, m.`picture_path`, t.* FROM `tweets` t, `members` m WHERE t.`member_id` = m.`member_id` AND t.`tweet` LIKE "%%%s%%" ORDER BY t.`created` DESC LIMIT %d, 5',
+         mysqli_real_escape_string($db, $_GET['search_word']),
+         $start
+      );
+
+   } else {
+     // 投稿内容（表示するページ分）を取得する
+     $sql = sprintf('SELECT m.`nick_name`, m.`picture_path`, t.* FROM `tweets` t, `members` m WHERE t.`member_id` = m.`member_id` ORDER BY t.`created` DESC LIMIT %d, 5',
+         $start
+       );
+   }
 
       $posts = mysqli_query($db,$sql) or die (mysqli_error($db));
 
@@ -210,6 +229,18 @@
       </div>
 
       <div class="col-md-8 content-margin-top">
+
+       <!-- 検索ボックス -->
+         <form action="" method="get" class="form-horizontal" role="form">
+          <?php if (isset($_GET['search_word']) && !empty($_GET['search_word'])): ?>
+            <input type="text" name="search_word" value="<?php echo $_GET['search_word']; ?>">
+           <?php else: ?>
+            <input type="text" name="search_word" value="">
+           <?php endif; ?>
+           <input type="submit" class="btn btn-success btn-xs" value="検索">
+         </form>
+
+
       <?php while ($post = mysqli_fetch_assoc($posts)):  ?>
         <div class="msg">
           <img src='./member_picture/<?php echo htmlspecialchars($post['picture_path'], ENT_QUOTES, 'UTF-8'); ?>' width="48" height="48" alt="<?php echo htmlspecialchars($post['nick_name'], ENT_QUOTES, 'UTF-8'); ?>">
@@ -225,9 +256,13 @@
             <?php if (isset($post['reply_tweet_id'])&&$post['reply_tweet_id']>0): ?>
               <a href="view.php?tweet_id=<?php echo htmlspecialchars($post['tweet_id'], ENT_QUOTES, 'UTF-8'); ?>">返信元のメッセージ</a>
             <?php endif ?>
-            
-            [<a href="edit.php?tweet_id=<?php echo h($post['tweet_id']); ?>" style="color: #00994C;">編集</a>]
+
+            <?php if (isset($_SESSION['id'])&&$_SESSION['id'] == $post['member_id']): ?>
+           [<a href="edit.php?tweet_id=<?php echo h($post['tweet_id']); ?>" style="color: #00994C;">編集</a>]
             [<a href="delete.php?tweet_id=<?php echo h($post['tweet_id']); ?>" style="color: #F33;">削除</a>]
+
+            <?php endif ?>
+
           </p>
         </div>
       <?php endwhile; ?>
