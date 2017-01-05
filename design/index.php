@@ -69,8 +69,17 @@
       $page = max($page,1);
 
       // 最終ページを取得する
+           //$sql = 'SELECT COUNT(*) AS cnt FROM tweets';
 
-     $sql = 'SELECT COUNT(*) AS cnt FROM tweets';
+      // ②必要なページ数を計算する
+   if (isset($_GET['search_word']) && !empty($_GET['search_word'])) {
+     $sql = sprintf('SELECT COUNT(*) AS cnt FROM `tweets` WHERE `tweet` LIKE "%%%s%%"',
+       mysqli_real_escape_string($db, $_GET['search_word'])
+     );
+   } else {
+     $sql = 'SELECT COUNT(*) AS cnt FROM `tweets`';
+   }
+
         
 
       $recordSet = mysqli_query($db, $sql);
@@ -207,12 +216,18 @@
               </div>
             </div>
           <ul class="paging">
+              <?php
+               $word = '';
+               if (isset($_GET['search_word'])) {
+                 $word = '&search_word=' . $_GET['search_word'];
+               }
+             ?>
             <input type="submit" class="btn btn-info" value="つぶやく">
             <!-- POSTにhiddenにて登録 -->
             <input type="hidden" name="reply_tweet_id" value="<?php echo h($_GET['res']); ?>">
                 &nbsp;&nbsp;&nbsp;&nbsp;
                 <?php if ($page>1): ?>
-                <li><a href="index.php?page=<?php print($page -1); ?>" class="btn btn-default">前</a></li>
+                <li><a href="index.php?page=<?php print($page -1); ?><?php echo $word; ?>" class="btn btn-default">前</a></li>
                &nbsp;&nbsp;|&nbsp;&nbsp;
 
                 <?php else: ?>
@@ -220,7 +235,7 @@
                &nbsp;&nbsp;|&nbsp;&nbsp;
                 <?php endif ?>
                 <?php if ($page < $maxPage): ?>
-                <li><a href="index.php?page=<?php print ($page+1); ?>" class="btn btn-default">次</a></li>
+                <li><a href="index.php?page=<?php print ($page+1); ?><?php echo $word; ?>" class="btn btn-default">次</a></li>
                 <?php else: ?>
                 <li class="btn">次</li>
                 <?php endif ?>
